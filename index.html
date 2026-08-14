@@ -1,0 +1,573 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>관제 — AI ANIMATION</title>
+<style>
+  :root{
+    --bg:#FAF9F6; --ink:#16140F; --sub:#6E6A60; --mut:#ABA599; --line:#E6E2D8;
+    --acc:#FF4D00; --ok:#0E7A4A; --okbg:#EDF6F1; --accbg:#FFF1EA;
+    --hair:1px solid var(--line);
+    --mono:ui-monospace,'SF Mono','Cascadia Mono',Consolas,monospace;
+  }
+  *{margin:0;padding:0;box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  body{background:var(--bg);color:var(--ink);
+    font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','Malgun Gothic','Apple SD Gothic Neo',sans-serif;
+    font-size:14px;line-height:1.5;-webkit-font-smoothing:antialiased}
+  .wrap{max-width:960px;margin:0 auto;padding:36px 24px 80px}
+  a{color:inherit}
+  section{scroll-margin-top:16px}
+  .mono{font-family:var(--mono)}
+
+  /* ── mast ── */
+  .mast{display:flex;justify-content:space-between;align-items:flex-end;padding-bottom:12px;border-bottom:2px solid var(--ink)}
+  .mast h1{font-size:30px;font-weight:900;letter-spacing:-.045em;line-height:1}
+  .mast h1 i{font-style:normal;color:var(--acc)}
+  .mast .nav{display:flex;gap:18px;align-items:baseline}
+  .mast .nav a{font-size:12.5px;font-weight:700;color:var(--mut);text-decoration:none}
+  .mast .nav a:hover{color:var(--acc)}
+  .mast .meta{font-family:var(--mono);font-size:9.5px;letter-spacing:.12em;color:var(--mut);text-transform:uppercase;text-align:right}
+
+  /* ── hero: NOW ── */
+  .hero{display:flex;align-items:center;gap:18px;padding:20px 0;border-bottom:var(--hair);flex-wrap:wrap}
+  .hero .st{flex:1;min-width:240px}
+  .hero .st b{display:block;font-size:23px;font-weight:850;letter-spacing:-.03em;line-height:1.25}
+  .hero .st b em{font-style:normal;color:var(--acc)}
+  .hero .st span{font-size:12.5px;color:var(--sub)}
+  .hero .st .mini{font-family:var(--mono);font-size:10px;color:var(--mut);letter-spacing:.06em;margin-top:4px;display:block}
+  .abtn{border:2px solid var(--ink);background:none;padding:12px 22px;cursor:pointer;font-family:inherit;
+    font-size:14px;font-weight:800;letter-spacing:-.01em;display:flex;align-items:center;gap:9px}
+  .abtn .ad{width:9px;height:9px;border-radius:50%;background:var(--mut)}
+  .abtn.on{background:var(--ink);color:#fff}
+  .abtn.on .ad{background:var(--acc);animation:pu 1.4s infinite}
+  .abtn:disabled{opacity:.45;cursor:default}
+  @keyframes pu{0%,100%{opacity:1}50%{opacity:.25}}
+  .sbtn{border:1px solid var(--line);background:none;padding:12px 16px;cursor:pointer;font-family:var(--mono);
+    font-size:10.5px;letter-spacing:.05em;color:var(--sub)}
+  .sbtn:hover{border-color:var(--acc);color:var(--acc)}
+
+  .lbl{font-family:var(--mono);font-size:10px;letter-spacing:.16em;color:var(--mut);text-transform:uppercase;margin:34px 0 4px;display:flex;align-items:baseline;gap:10px}
+  .lbl .r{margin-left:auto;letter-spacing:.06em}
+  .lbl .r a{text-decoration:none;color:var(--mut)} .lbl .r a:hover{color:var(--acc)}
+
+  /* ── queue ── */
+  .con{display:flex;align-items:baseline;gap:10px;padding:9px 0;border-bottom:var(--hair)}
+  .sdot{width:8px;height:8px;border-radius:50%;background:var(--mut);align-self:center;flex-shrink:0}
+  .sdot.up{background:var(--ok)}
+  .con b{font-size:12.5px;font-weight:800}
+  .con span{font-family:var(--mono);font-size:10px;color:var(--sub)}
+  .qrow{display:grid;grid-template-columns:52px 1fr 88px 92px;gap:12px;padding:11px 0;border-bottom:var(--hair);align-items:center}
+  .qrow .id{font-family:var(--mono);font-size:11px;color:var(--sub)}
+  .qrow b{font-size:13.5px;font-weight:700;display:block}
+  .qrow p{font-size:11px;color:var(--sub);margin-top:1px}
+  .qst{font-family:var(--mono);font-size:9.5px;letter-spacing:.1em;color:var(--mut)}
+  .qst.rdy{color:var(--ok)} .qst.run{color:var(--acc)}
+  .qbtn{font-family:var(--mono);font-size:10px;background:none;border:1px solid var(--line);padding:7px 0;width:92px;cursor:pointer;color:var(--ink)}
+  .qbtn:hover{border-color:var(--acc);color:var(--acc)}
+  .qbtn:disabled{color:var(--mut);cursor:default;border-color:#F0EDE5}
+  .qres{grid-column:2/5;font-size:12px;color:var(--sub);display:flex;gap:10px;align-items:baseline;flex-wrap:wrap}
+  .qres .vd{font-family:var(--mono);font-size:9.5px;letter-spacing:.1em}
+  .qres .vd.P{color:var(--ok)} .qres .vd.F{color:#B3261E} .qres .vd.B{color:var(--mut)}
+  .qres .lg{font-family:var(--mono);font-size:10px;color:var(--mut);cursor:pointer;text-decoration:underline}
+  .logpre{grid-column:1/5;font-family:var(--mono);font-size:10.5px;line-height:1.45;background:#16140F;color:#D8D3CB;
+    padding:12px 14px;max-height:240px;overflow:auto;white-space:pre-wrap;word-break:break-all;display:none}
+  .imgs{display:grid;grid-template-columns:repeat(auto-fill,minmax(110px,1fr));gap:8px;margin-top:8px}
+  .imgs img{width:100%;aspect-ratio:1;object-fit:cover;display:block;border:1px solid var(--line);cursor:pointer}
+  .off{font-size:12px;color:var(--mut);padding:8px 0}
+  /* gallery */
+  .gal{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:10px;margin-top:8px}
+  .gal .gi{border:1px solid var(--line);background:#F2EFE8}
+  .gal video,.gal img{width:100%;aspect-ratio:16/10;object-fit:cover;display:block;background:#111}
+  .gal .cap{font-family:var(--mono);font-size:9px;color:var(--sub);padding:5px 8px;display:flex;gap:6px;justify-content:space-between}
+  .gal .cap b{color:var(--ink);font-weight:700}
+  .gtabs{display:flex;gap:16px;margin-top:2px}
+  .gtabs button{background:none;border:0;font-family:inherit;font-size:12px;font-weight:700;color:var(--mut);padding:6px 0;cursor:pointer}
+  .gtabs button.on{color:var(--ink);box-shadow:0 2px 0 var(--acc)}
+
+  /* ── T1 knowledge board ── */
+  .tband{display:flex;align-items:baseline;gap:14px;padding:18px 0 4px}
+  .tband .c{font-family:var(--mono);font-size:11px;color:var(--acc)}
+  .tband h2{font-size:24px;font-weight:850;letter-spacing:-.03em}
+  .tband .ph{font-family:var(--mono);font-size:10px;color:var(--mut)}
+  .tband .pct{margin-left:auto;font-size:30px;font-weight:250;font-variant-numeric:tabular-nums}
+  .tband .pct small{font-size:11px;color:var(--mut)}
+  .can{padding:10px 14px;background:var(--okbg);border-left:3px solid var(--ok);margin:8px 0 18px}
+  .can b{font-size:13.5px;font-weight:800;color:var(--ok)}
+  .can p{font-size:13px;margin-top:3px}
+  .can p em{font-style:normal;font-weight:700}
+  .board{display:grid;grid-template-columns:1.2fr 1fr 1fr;gap:0 32px}
+  @media(max-width:760px){.board{grid-template-columns:1fr}}
+  .col .ch{display:flex;align-items:baseline;gap:9px;padding-bottom:6px;border-bottom:2px solid var(--ink)}
+  .col .ch b{font-size:32px;font-weight:250;font-variant-numeric:tabular-nums;line-height:1}
+  .col.k .ch b{color:var(--ok)} .col.v .ch b{color:var(--acc)} .col.u .ch b{color:var(--mut)}
+  .col .ch span{font-size:12.5px;font-weight:800}
+  .col .ch .m{margin-left:auto;font-family:var(--mono);font-size:9px;color:var(--mut);letter-spacing:.08em}
+  .kit{border-bottom:1px solid #F0EDE5;cursor:pointer}
+  .kit .h{display:flex;align-items:baseline;gap:8px;padding:8px 0}
+  .kit .h .d{width:5px;height:5px;border-radius:50%;flex-shrink:0;align-self:center}
+  .col.k .kit .d{background:var(--ok)} .col.v .kit .d{background:var(--acc)} .col.u .kit .d{background:var(--mut)}
+  .kit .h span{font-size:13px;font-weight:650;letter-spacing:-.01em;line-height:1.35}
+  .kit .h .src{margin-left:auto;font-family:var(--mono);font-size:8.5px;letter-spacing:.05em;color:var(--mut);
+    border:1px solid var(--line);padding:1px 5px;flex-shrink:0;white-space:nowrap}
+  .kit .xd{display:none;padding:2px 0 12px 13px;font-size:12px;color:var(--sub)}
+  .kit.open .xd{display:block}
+  .kit .xd .row{display:flex;gap:8px;margin-top:4px}
+  .kit .xd .kk{font-family:var(--mono);font-size:9px;letter-spacing:.1em;color:var(--mut);width:34px;flex-shrink:0;padding-top:2px;text-transform:uppercase}
+  .kit .xd a{font-weight:600;text-decoration:none;border-bottom:1px solid var(--line);margin-right:12px;color:var(--ink)}
+  .kit .xd a:hover{color:var(--acc);border-color:var(--acc)}
+  .more{font-family:var(--mono);font-size:10px;color:var(--mut);padding:9px 0;display:inline-block;text-decoration:none}
+  .more:hover{color:var(--acc)}
+
+  /* ── other tracks ── */
+  .trow2{display:flex;gap:12px;align-items:baseline;padding:12px 0;border-bottom:var(--hair);flex-wrap:wrap}
+  .trow2 .c{font-family:var(--mono);font-size:11px;color:var(--sub)}
+  .trow2 b{font-size:15px;font-weight:800}
+  .trow2 span{font-size:12px;color:var(--sub)}
+  .trow2 .dl{font-size:12px;font-weight:600;text-decoration:none;border-bottom:1px solid var(--line)}
+  .trow2 .dl:hover{color:var(--acc);border-color:var(--acc)}
+  .trow2.dim b{color:var(--mut)} .trow2.dim span{color:var(--mut)}
+
+  /* ── docs ── */
+  .lsec{display:flex;gap:14px;padding:8px 0;border-bottom:var(--hair);align-items:baseline;flex-wrap:wrap}
+  .lsec .lb{font-family:var(--mono);font-size:9.5px;letter-spacing:.12em;width:64px;flex-shrink:0}
+  .lsec .lb b{color:var(--acc)} .lsec .lb span{color:var(--mut)}
+  .lsec a{font-size:12px;font-weight:600;text-decoration:none;border-bottom:1px solid var(--line)}
+  .lsec a:hover{color:var(--acc);border-color:var(--acc)}
+  .lsec .x{font-size:10.5px;color:var(--mut)}
+  footer{margin-top:44px;font-family:var(--mono);font-size:9.5px;letter-spacing:.12em;color:var(--mut);text-transform:uppercase}
+  @media(max-width:700px){.qrow{grid-template-columns:44px 1fr;gap:8px}.qrow .qst,.qrow .qbtn{grid-column:2}.mast .nav{display:none}}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<div class="mast">
+  <h1>관제<i>.</i></h1>
+  <div class="nav"><a href="#work">작업</a><a href="#gal">갤러리</a><a href="#board">지식</a><a href="#docs">문서</a></div>
+  <div class="meta">AI Animation · 4 Tracks<br>Updated <span id="upd"></span></div>
+</div>
+
+<!-- HERO -->
+<div class="hero">
+  <button class="abtn" id="autoBtn" onclick="toggleAuto()" disabled><span class="ad"></span><span id="autoLbl">AUTO</span></button>
+  <div class="st">
+    <b id="heroTitle">리스너 확인 중…</b>
+    <span id="heroSub"></span>
+    <span class="mini" id="heroMini"></span>
+  </div>
+  <button class="sbtn" id="startBtn" style="display:none" onclick="copyStart(this)">리스너 시작 명령 복사</button>
+</div>
+
+<!-- QUEUE -->
+<section id="work">
+  <div class="lbl">작업 큐<span class="r" id="chint"></span></div>
+  <div class="con">
+    <div class="sdot" id="ldot"></div><b>리스너</b><span id="linfo">…</span>
+    <div class="sdot" id="cdot" style="margin-left:16px"></div><b>ComfyUI</b><span id="cinfo">…</span>
+  </div>
+  <div id="queue"></div>
+  <div class="lbl">로컬 최근 생성 <span class="r">ComfyUI 라이브</span></div>
+  <div id="outs" class="off">ComfyUI 연결 시 자동 표시</div>
+</section>
+
+<!-- GALLERY -->
+<section id="gal">
+  <div class="lbl">갤러리 — 전체 생성물 아카이브 <span class="r">힉스필드 CDN · 폰에서도 재생</span></div>
+  <div class="gtabs">
+    <button class="on" onclick="galTab(this,'l')">로컬 <span id="gln"></span></button>
+    <button onclick="galTab(this,'v')">힉스필드 영상 <span id="gvn"></span></button>
+    <button onclick="galTab(this,'i')">힉스필드 이미지 <span id="gin"></span></button>
+  </div>
+  <div class="gal" id="galBox"></div>
+</section>
+
+<!-- T1 KNOWLEDGE BOARD -->
+<section id="board">
+  <div class="tband"><span class="c">T1</span><h2>당근스타일</h2><span class="ph" id="t1ph">PHASE 0/4</span>
+    <span class="pct">65<small>%</small></span></div>
+  <div class="can"><b>지금 확실히 만들 수 있는 것</b>
+    <p>캐릭터 단독 렌더·시트 양산 <em>— 즉시</em> · 씬 1컷 <em>— v5 수준 재현</em> · 로컬 씬·영상 <em>— GO-02→03→04 통과가 조건</em></p></div>
+  <div class="board">
+    <div class="col k"><div class="ch"><b id="nK">9</b><span>확실</span><span class="m">클릭 = 근거·출처</span></div><div id="kList"></div></div>
+    <div class="col v"><div class="ch"><b id="nV">1</b><span>검증중</span><span class="m">GO 연결</span></div><div id="vList"></div></div>
+    <div class="col u"><div class="ch"><b id="nU">47</b><span>미지</span><span class="m">우선순위순</span></div><div id="uList"></div></div>
+  </div>
+</section>
+
+<!-- OTHER TRACKS -->
+<section>
+  <div class="lbl">다른 트랙</div>
+  <div id="tracks2"></div>
+</section>
+
+<!-- DOCS -->
+<section id="docs">
+  <div class="lbl">문서</div>
+  <div id="docsEl"></div>
+</section>
+
+<footer>Source of truth — Obsidian vault · 동적 상태는 리스너가 라이브 서빙</footer>
+</div>
+
+<script>
+const VAULT='Obsidian for Claude';
+const API='http://127.0.0.1:8188';
+const LISTENER='http://127.0.0.1:8787';
+const KJ_TOKEN='kj_7f3a9c2e51d84b60a1';
+const START_CMD='python "C:\\\\Users\\\\USER\\\\Desktop\\\\Workspace\\\\관제_202608\\\\go_listener.py"';
+const F3D='3D페르소나_스타일이식_202608/', FST='정답스타일_재현_202608/';
+const ob=p=>'obsidian://open?vault='+encodeURIComponent(VAULT)+'&file='+encodeURIComponent(p);
+
+const DATA={
+updated:'2026-08-13',
+queue:[
+ {id:'GO-01',t:'캐릭터 시트 3패널 — face-lock crop',d:'얼굴CU / headless 전신 / 후면 · I1·I2·I12',st:'rdy',
+  cmd:'GO-01 실행해줘 — C2 기준 3패널 시트, 로컬 Qwen-Edit'},
+ {id:'GO-02',t:'LOG 007 재현 — 시드 고정 + E5 2회차',d:'성공 시 첫 지식 승격 · E5',st:'rdy',
+  cmd:'GO-02 실행해줘 — LOG007 재현, 시드 고정 기록'},
+ {id:'GO-03',t:'바스트 1인 100점 1컷',d:'FaceDetailer — 미설치면 스스로 BLOCKED · A1·A3·A4',st:'rdy',
+  cmd:'GO-03 실행해줘 — 바스트 1인 + FaceDetailer'},
+ {id:'GO-04',t:'합격 컷 → wan2.2 i2v 4초',d:'GO-03 PASS 필요 · B1·B2·B3',st:'rdy',
+  cmd:'GO-04 실행해줘 — wan2.2 4초'},
+ {id:'GO-05',t:'자전거 씬 → wan2.2 4초 — 「생성 직전」 실행',d:'START는 CDN에서 자가 확보 · 즉시 가능 · B3·I6',st:'rdy',
+  cmd:'GO-05 실행해줘 — 자전거 씬 영상'},
+ {id:'GO-90',t:'사이트 배포·갱신 (GitHub Pages)',d:'1회 gh 로그인 필요 · 이후 재실행 = 갱신',st:'rdy',
+  cmd:'GO-90 실행해줘 — 대시보드 사이트 배포'}
+],
+know:[
+ {t:'얼굴 문법은 크기가 지배한다 — 3% 죽고 40% 산다',src:'실측 R18·19',
+  proof:'표정 4종 한 시트(얼굴 5%) → 눈 전멸 2연속 · 1종 1장 4K(40%) → 8/8 통과 · 전신 일괄(3%) → 기본 눈 회귀',
+  chain:'v5 씬 실측 → R25 진단 → 가설 A1·A3 → GO-03에서 임계 실측',
+  docs:[['원자노트',F3D+'원자노트 · 표정과 얼굴은 단독 렌더에서만 문법이 유지된다'],['R25 진단',FST+'★ R25 · 진단 정정 — 병목은 리그가 아니라 얼굴 픽셀이다']]},
+ {t:'눈은 그리게 말고, 건드리지 못하게',src:'실측 R19',
+  proof:'"복사하라" 33% · "손대지 마라" 50% · 3요소 명시+겹침 허용+크기 고정 → 100%(8/8)',
+  chain:'R13~R19 눈 법전 실험 → 캐릭터 양산 골격에 반영(확정)',
+  docs:[['원자노트',F3D+'원자노트 · 눈은 그리게 하지 말고 건드리지 못하게 하라']]},
+ {t:'만들지 말고 정답을 편집 — 90 vs 48점',src:'실측 R13',
+  proof:'goal 원본 EDIT 89~90점 · 2D 파생 48점 · 등신비도 EDIT만 4.26~4.31로 정답권',
+  chain:'R12~13 → 캐릭터 10종 전부 이 방식으로 양산 → GO-02가 시드 고정 재현',
+  docs:[['원자노트',F3D+'원자노트 · 캐릭터는 새로 그리지 말고 정답 원본을 편집하라']]},
+ {t:'부정 지시는 재현성 0',src:'실측 교차',
+  proof:'"do not add eyebrows"를 nano는 따르고 gpt·kling·flux는 무시 — 모델마다 달라 통제 불가',
+  chain:'모델 7종 비교 → 긍정 치환표 확정 → 로컬 Qwen 유효성은 가설 E4로 남음',
+  docs:[['원자노트',F3D+'원자노트 · 부정 지시는 모델마다 다르게 해석된다']]},
+ {t:'정체성은 이미지, 정밀값은 텍스트',src:'실측 3연속',
+  proof:'색 스와치 첨부가 텍스트 hex보다 1.5~2.2배 나쁨 (P2·R9·R11) · 밝은 색은 L*+9 보정',
+  chain:'3연속 반증 → 기존 노트 조건부 폐기 — 강등 절차의 선례',
+  docs:[['원자노트',F3D+'원자노트 · 이미지 첨부는 정체성용, 정밀값은 텍스트로']]},
+ {t:'렌더 같은 참조는 스타일을 빼앗는다',src:'실측 M계열',
+  proof:'도식(마스크·파선) 7/7 통과 vs 렌더형 0/3 · 무표정 플랫 벡터도 오염',
+  chain:'M1~M13 참조 실험 → 도식 선언문 확정',
+  docs:[['원자노트',F3D+'원자노트 · 참조 이미지가 렌더처럼 보이면 스타일을 빼앗는다']]},
+ {t:'정답 재질 = 펠트가 아니라 스톱모션풍 3D',src:'정답 분석 R24',
+  proof:'당근부동산 유튜브 3편 프레임 분석 — R1~R23의 펠트 어휘 전면 폐기, 부위별 재질표 확정',
+  chain:'정답 영상 3편 → 재질 법전 → 펠트 영구 금지어 등록',
+  docs:[['원자노트',F3D+'원자노트 · 정답은 니들펠트가 아니라 스톱모션풍 3D 렌더다']]},
+ {t:'END는 START의 편집이다',src:'실측 R22',
+  proof:'END 독립 생성 → 스케일·조명 어긋남 · START 편집 → 스케일 오차 0.75%',
+  chain:'씬 실험 → 외부 자료의 Final frame 개념과 합류 → 가설 I6·I7로 확장',
+  docs:[['원자노트',F3D+'원자노트 · 씬은 START를 편집해 END를 만든다']]},
+ {t:'앞머리는 보호막 — 덮으면 100%',src:'실측 8/8',
+  proof:'이마 덮음 6/6 유지 vs 노출 6/6 분리 · 3요소 프롬프트와 결합 시 8/8',
+  chain:'직관과 정반대 발견 → 헤어 기본값 규칙으로 승격',
+  docs:[['원자노트',F3D+'원자노트 · 앞머리는 3요소를 지키는 편이다'],['원자노트 이마',F3D+'원자노트 · 이마 노출이 별개 눈썹을 부른다']]}
+],
+verifying:[
+ {t:'비율은 글이 아니라 밑그림 PNG로만',src:'T12 로컬',state:'1/2',go:'GO-02',
+  proof:'라운드 005 — 회색 캔버스 4연속 실패 후 라인 스케치 입력으로 돌파(1회). 재현되면 첫 승격',
+  chain:'T12 R005 → 가설 E5 → GO-02가 2회차 재현',
+  docs:[['원자노트',F3D+'원자노트 · 등신비와 치수는 텍스트로 계산되지 않는다']]}
+],
+unknown:{total:47,top:[
+ {id:'I1',t:'face-lock crop — 전신 머리를 지우면 얼굴 소스가 고정되는가',src:'외부·힉스필드',go:'GO-01',
+  proof:'외부 검증 주장 — 우리 환경 실증 0',chain:'스킬 109문서 → GO-01 시트 제작 → 영상 단계에서 최종 판정',docs:[['외부 레시피','외부자원 · 힉스필드 프롬프트 스킬 레시피']]},
+ {id:'A1',t:'얼굴 30% 임계 — 실측값인가 경험칙인가',src:'실측 필요',go:'GO-03',
+  proof:'30%는 경험칙. 20/25/30/35/40% 5단 실측 예정',chain:'R25 진단 → GO-03',docs:[['가설 대장','가설 대장 · 미검증 항목']]},
+ {id:'A3',t:'FaceDetailer가 작은 얼굴을 구제하는가',src:'로컬 전용',go:'GO-03',
+  proof:'힉스필드엔 없는 로컬 고유 처방 — 미실증',chain:'R25 → Impact-Pack 설치 후 GO-03',docs:[['가설 대장','가설 대장 · 미검증 항목']]},
+ {id:'C5',t:'곤봉손은 스펙인가, 480p 도피의 흔적인가',src:'재해석',go:'—',
+  proof:'참이면 캐릭터 정의 재작성 — 파급 최대',chain:'R25 정정 → C1(손가락 5개) 결과에 종속',docs:[['가설 대장','가설 대장 · 미검증 항목']]},
+ {id:'B1',t:'minimax_h3 얼굴유지 1위가 로컬서도 재현되는가',src:'힉스필드 R21',go:'GO-04 후속',
+  proof:'크레딧 규칙으로 배제됐던 1위 모델 — 로컬은 무료',chain:'R21 비교 → 로컬 h3 확보 → wan2.2와 동일 조건 비교',docs:[['가설 대장','가설 대장 · 미검증 항목']]},
+ {id:'I6',t:'Action-reversal fill — END 규칙의 진짜 원인인가',src:'외부·힉스필드',go:'GO-04 후속',
+  proof:'액션이 일찍 끝나면 역재생으로 채운다는 외부 주장 — 우리 END 고개숙임 금지의 상위 개념일 가능',chain:'외부 레시피 → 영상 단계 검증',docs:[['외부 레시피','외부자원 · 힉스필드 프롬프트 스킬 레시피']]}
+]},
+tracks2:[
+ {c:'T2',n:'스타일라이즈드 3D',s:'분석 완료 · 실행 0 — 정답 계정 3종 시계열·DNA 8축 확보. T1 규칙 이식 후 착수',
+  docs:[['대장',FST+'정답스타일 · 프로젝트 대장 (MOC)'],['R25',FST+'★ R25 · 진단 정정 — 병목은 리그가 아니라 얼굴 픽셀이다']]},
+ {c:'T3',n:'2D 애니메이션',s:'잠김 — 해금: T1 100점 1컷 + 4초 영상',dim:1},
+ {c:'T4',n:'실사',s:'잠김 — 해금: T1 이후 · 병목이 달라 규칙 이식 불가',dim:1}
+],
+galL:[
+ ['T1_파이널 · R13 4K 파이널',['gen_p01_R13_FINAL.png','gen_p02_R13_FINAL.png','gen_p06_R13_FINAL.png','gen_p07_R13_FINAL.png','gen_p08_R13_FINAL.png','gen_p09_R13_FINAL.png','gen_p11_R13_FINAL.png']],
+ ['T1_파이널 · 이전 라운드',['gen_p01_r1_FINAL.png','gen_p01_r2_FINAL.png','gen_p02_r5_FINAL.png','gen_p02_r6_FINAL.png','gen_p06_r1_FINAL.png','gen_p06_r2_FINAL.png','gen_p07_r1_FINAL.png','gen_p07_r2_FINAL.png','gen_p08_r2_FINAL.png','gen_p08_r3_FINAL.png','gen_p09_r2_FINAL.png','gen_p09_r3_FINAL.png','gen_p10_r3_FINAL.png','gen_p11_r1_FINAL.png','gen_p11_r2_FINAL.png']],
+ ['T1_캐릭터시트 · 확정 C1~C7 + 턴어라운드',['C1_단발.png','C2_긴생머리.png','C3_포니테일.png','C4_곱슬.png','C5_버섯컷.png','C6_다운펌.png','C7_투블럭.png','턴어라운드_L1_v2.png','턴어라운드_L2_v2.png','_전체_7종.png','_전체_10종_v2.png']],
+ ['T1_캐릭터시트 · v2 10종',['01_단발.png','02_긴생머리.png','03_포니테일.png','04_곱슬.png','05_학생후드.png','06_캡모자.png','07_임산부.png','08_버섯컷.png','09_안경남.png','10_어르신.png']],
+ ['T1_보드·비교',['FINAL_8set_v3.jpg','FINAL_8set_v2.jpg','FINAL_8set.jpg','R10_faces.jpg','R11_ab.jpg','R8_eye_compare.jpg','R9_eyes.jpg','R4to7_compare.jpg']]
+],
+galV:[
+ ['hf_20260807_064719_a11cd03a-8aaf-466d-b928-e0697ca66cbd.mp4','minimax_h3','08-07','자전거 인계 풀시퀀스 5s','https://d2ol7oe51mr4n9.cloudfront.net/user_38xXeAqYqC0pfQ4NJv5WNLmgGdI/e72446f7-99dd-4580-8c3d-8bac250524de_resize.jpg'],
+ ['hf_20260807_033848_2e0a7bdb-caac-4993-a14d-076e5bedb460.mp4','minimax_h3','08-07','감사 인사 5s',''],
+ ['hf_20260807_033750_26337b6b-be87-4ffc-9a79-87954212c89f.mp4','kling3+Element','08-07','인사 · 엘리먼트 바인딩',''],
+ ['hf_20260807_033600_82b13a87-f8e7-42e5-8b62-dd661a72b330.mp4','kling3','08-07','인사 · noElement',''],
+ ['hf_20260807_061421_d8ed17d9-21e4-451f-9318-90af134e23d3.mp4','wan2_7','08-07','인사 2s',''],
+ ['hf_20260807_061420_276a7bfa-a1a5-475f-a126-d13c116eab0a.mp4','wan2_7','08-07','인사 2s v2',''],
+ ['hf_20260807_061923_5800b6e2-8314-4ff4-a00b-7127afb033fa.mp4','grok','08-07','인사 1s',''],
+ ['hf_20260806_082227_709690d5-2b40-41ab-918e-2a01dd7aead1.mp4','minimax_h3','08-06','커플 자전거 인계 4:3','https://d2ol7oe51mr4n9.cloudfront.net/user_38xXeAqYqC0pfQ4NJv5WNLmgGdI/c6373fd5-94be-4e03-8e56-e13780298862.png'],
+ ['hf_20260806_075835_7284f201-d173-46f2-bea2-04ebbe526683.mp4','kling3','08-06','박스 전달',''],
+ ['hf_20260806_033234_5a860a1b-ed24-481a-b402-5b44207871e8.mp4','hailuo','08-06','T포즈→웨이브','https://d2ol7oe51mr4n9.cloudfront.net/user_38xXeAqYqC0pfQ4NJv5WNLmgGdI/65dc6503-e802-4be1-92fd-8938a3ca48a6.png'],
+ ['hf_20260806_033220_51e0bb9d-4702-41bb-9073-d23a5459e2c4.mp4','minimax_h3','08-06','T포즈→웨이브','https://d2ol7oe51mr4n9.cloudfront.net/user_38xXeAqYqC0pfQ4NJv5WNLmgGdI/65dc6503-e802-4be1-92fd-8938a3ca48a6.png'],
+ ['hf_20260806_033220_6657f17a-c5ba-4414-a077-7d63035c4430.mp4','seedance2.0','08-06','T포즈→웨이브','https://d2ol7oe51mr4n9.cloudfront.net/user_38xXeAqYqC0pfQ4NJv5WNLmgGdI/65dc6503-e802-4be1-92fd-8938a3ca48a6.png'],
+ ['hf_20260806_033220_3837c723-6dee-411a-bab8-4d44d9b02c28.mp4','kling3 turbo','08-06','T포즈→웨이브','https://d2ol7oe51mr4n9.cloudfront.net/user_38xXeAqYqC0pfQ4NJv5WNLmgGdI/65dc6503-e802-4be1-92fd-8938a3ca48a6.png'],
+ ['hf_20260728_040528_cbd6debb-ae49-4d92-98c1-d38c63020c9b.mp4','seedance2.0','07-28','주먹 유지 테스트',''],
+ ['hf_20260706_060037_b9955e8c-71dc-4670-b305-f122d9e4f4fd.mp4','kling3','07-06','현관택배 · 2D 일러','https://d2ol7oe51mr4n9.cloudfront.net/user_38xXeAqYqC0pfQ4NJv5WNLmgGdI/76a84bbb-8943-4696-ad2c-2a14770cf4f3.png'],
+ ['hf_20260701_072512_b052d765-6c4c-467a-9e94-30db511ba334.mp4','kling3','07-01','현관택배 v1','https://d2ol7oe51mr4n9.cloudfront.net/user_38xXeAqYqC0pfQ4NJv5WNLmgGdI/1ce4edc8-8e96-436f-948a-c63a7a6a57a0.jpg'],
+ ['hf_20260626_074709_cab57d98-22ba-407d-9acd-3fe2baf7e387.mp4','kling3','06-26','POV 택배 · 실사','https://d2ol7oe51mr4n9.cloudfront.net/user_38xXeAqYqC0pfQ4NJv5WNLmgGdI/a3d91ec2-8837-4084-88ec-3d5790797b7c.png']
+],
+galI:[
+ ['hf_20260807_031550_8b5809dd-9c57-4c9d-84c7-cdeb3169148f.png','gpt_image_2','v5 자전거 씬 원본'],
+ ['hf_20260807_031847_7ff6c817-4f67-4915-9111-b4ba30f3444c.png','gpt_image_2','v5 + 3요소 눈 적용'],
+ ['hf_20260807_032141_3a3d6427-33cb-4911-bb9d-958e77e211e8.png','gpt_image_2','END · 감사 인사'],
+ ['hf_20260807_035238_c4336ef2-508a-434b-9f09-1423309f0532.png','gpt_image_2','END · 양손 인수'],
+ ['hf_20260807_061831_3bc1df7b-0676-4b0e-b8ed-1e6b18c69401.png','gpt_image_2','헤어짐 와이드'],
+ ['hf_20260807_024142_b6f89fb3-dd73-42f0-b9ea-009de4c45329.png','gpt_image_2','손 흔들기'],
+ ['hf_20260810_022707_755c3fe3-375d-4b47-8d5c-224c1cf5233f.png','nano_banana_2','C2 플레이트'],
+ ['hf_20260810_022830_b1d3509e-0ac5-44ca-a844-8af9fef3d2a4.png','nano_banana_2','C4 플레이트 · 입 교정'],
+ ['hf_20260810_022707_8c12d4c6-f6be-4983-9e58-66f89d22cb0b.png','nano_banana_2','C4 플레이트 v1'],
+ ['hf_20260810_022707_4b54696b-64a6-4942-b71b-d54d2b048cc0.png','nano_banana_2','민트 자전거 플레이트']
+],
+layers:[
+ ['L0','인덱스',[['운영 체계','00 ★ 프로젝트 운영 체계'],['T1 대장',F3D+'3D페르소나 · 프로젝트 대장 (MOC)'],['실행 가이드','관제 시스템 · 실행 가이드']],''],
+ ['L2','가설',[['가설 대장 53','가설 대장 · 미검증 항목']],''],
+ ['L3','경험',[['R20 인수인계',F3D+'R20 ★ 새 세션 인수인계 — 여기부터 읽어라'],['라운드 대장 R1-R30',F3D+'연혁 · 3D페르소나 전체 라운드 대장 R1-R30']],'외 20'],
+ ['EX','외부',[['힉스필드 레시피','외부자원 · 힉스필드 프롬프트 스킬 레시피'],['MCP 해결기록','ComfyUI_MCP연결_202608/ComfyUI_MCP_해결기록']],'']
+]
+};
+
+/* ── render static ── */
+document.getElementById('upd').textContent=DATA.updated;
+
+document.getElementById('queue').innerHTML=DATA.queue.map(q=>`
+ <div class="qrow" id="q-${q.id}">
+  <span class="id">${q.id}</span>
+  <div><b>${q.t}</b><p>${q.d}</p></div>
+  <span class="qst" id="st-${q.id}">—</span>
+  <button class="qbtn" id="bt-${q.id}" onclick="runGo('${q.id}',this)">▶ 실행</button>
+  <div class="qres" id="rs-${q.id}" style="display:none"></div>
+  <pre class="logpre" id="lp-${q.id}"></pre>
+ </div>`).join('');
+
+const kitHTML=(n,extra='')=>`
+ <div class="kit" onclick="this.classList.toggle('open')">
+  <div class="h"><span class="d"></span><span>${n.t}</span><span class="src">${n.src}</span></div>
+  <div class="xd">
+   ${extra}
+   <div class="row"><span class="kk">근거</span><span>${n.proof}</span></div>
+   <div class="row"><span class="kk">계보</span><span>${n.chain}</span></div>
+   <div class="row"><span class="kk">문서</span><span>${n.docs.map(d=>`<a href="${ob(d[1])}" onclick="event.stopPropagation()">${d[0]}</a>`).join('')}</span></div>
+  </div></div>`;
+
+document.getElementById('kList').innerHTML=DATA.know.map(n=>kitHTML(n)).join('');
+document.getElementById('vList').innerHTML=DATA.verifying.map(n=>
+ kitHTML(n,`<div class="row"><span class="kk">상태</span><span><b style="color:var(--acc)">${n.state}</b> · ${n.go}에서 검증</span></div>`)).join('');
+document.getElementById('uList').innerHTML=DATA.unknown.top.map(n=>
+ kitHTML(n,`<div class="row"><span class="kk">검증</span><span>${n.go}</span></div>`)).join('')+
+ `<a class="more" href="${ob('가설 대장 · 미검증 항목')}">+${DATA.unknown.total-DATA.unknown.top.length} 전체 → 가설 대장</a>`;
+document.getElementById('nK').textContent=DATA.know.length;
+document.getElementById('nV').textContent=DATA.verifying.length;
+document.getElementById('nU').textContent=DATA.unknown.total;
+
+document.getElementById('tracks2').innerHTML=DATA.tracks2.map(t=>
+ `<div class="trow2${t.dim?' dim':''}"><span class="c">${t.c}</span><b>${t.n}</b><span>${t.s}</span>${
+   (t.docs||[]).map(d=>`<a class="dl" href="${ob(d[1])}">${d[0]}</a>`).join('')}</div>`).join('');
+
+/* gallery */
+const CDN='https://d8j0ntlcm91z4.cloudfront.net/user_38xXeAqYqC0pfQ4NJv5WNLmgGdI/';
+const ARC='file:///C:/Users/USER/Desktop/Workspace/'+encodeURIComponent('관제_아카이브_202608')+'/';
+function galRender(mode){
+ const box=document.getElementById('galBox');
+ if(mode==='l'){
+  if(location.protocol==='https:'){
+   box.innerHTML='<div class="off" style="grid-column:1/-1">로컬 아카이브는 PC에서 볼트의 ★ 대시보드.html로 열었을 때 표시됩니다 — 폰에서는 드라이브 볼트의 관제_첨부 폴더를 여세요. (GO-91이 동기화)</div>';
+   return}
+  box.innerHTML=DATA.galL.map(g=>{
+   const folder=g[0].split(' · ')[0];
+   return `<div class="off" style="grid-column:1/-1;font-family:var(--mono);font-size:10px;letter-spacing:.1em;padding:10px 0 2px">${g[0].toUpperCase()} · ${g[1].length}</div>`+
+    g[1].map(f=>`<div class="gi"><img loading="lazy" src="${ARC}${encodeURIComponent(folder)}/${encodeURIComponent(f)}" onclick="window.open(this.src)">
+     <div class="cap"><b>${f.replace(/\.(png|jpg)$/,'')}</b></div></div>`).join('');
+  }).join('');
+  return}
+ if(mode==='v'){
+  box.innerHTML=DATA.galV.map(v=>`<div class="gi">
+   <video controls playsinline preload="none" ${v[4]?`poster="${v[4]}"`:''}><source src="${CDN}${v[0]}" type="video/mp4"></video>
+   <div class="cap"><b>${v[3]}</b><span>${v[1]} · ${v[2]}</span></div></div>`).join('');
+ }else{
+  box.innerHTML=DATA.galI.map(i=>`<div class="gi">
+   <img loading="lazy" src="${CDN}${i[0]}" onclick="window.open('${CDN}${i[0]}')">
+   <div class="cap"><b>${i[2]}</b><span>${i[1]}</span></div></div>`).join('');
+ }
+}
+function galTab(btn,mode){
+ document.querySelectorAll('.gtabs button').forEach(b=>b.classList.remove('on'));
+ btn.classList.add('on');galRender(mode);
+}
+document.getElementById('gvn').textContent=DATA.galV.length;
+document.getElementById('gin').textContent=DATA.galI.length;
+document.getElementById('gln').textContent=DATA.galL.reduce((a,g)=>a+g[1].length,0);
+galRender('l');
+
+document.getElementById('docsEl').innerHTML=DATA.layers.map(l=>
+ `<div class="lsec"><span class="lb"><b>${l[0]}</b> <span>${l[1]}</span></span>${
+   l[2].map(d=>`<a href="${ob(d[1])}">${d[0]}</a>`).join('')}${l[3]?`<span class="x">${l[3]}</span>`:''}</div>`).join('');
+
+/* ── live ── */
+let comfyUp=false, listenerUp=false, plTimer=null, autoOn=false, runStart=null, elapTimer=null;
+const cbase=()=>listenerUp?LISTENER+'/comfy':API;
+
+function copyStart(btn){
+ const done=()=>{btn.textContent='복사됨 — 터미널에 붙여넣기';setTimeout(()=>btn.textContent='리스너 시작 명령 복사',3000)};
+ if(navigator.clipboard&&window.isSecureContext){navigator.clipboard.writeText(START_CMD).then(done).catch(()=>prompt('복사:',START_CMD))}
+ else{prompt('복사:',START_CMD)}
+}
+async function toggleAuto(){
+ try{
+  const r=await fetch(LISTENER+'/auto',{method:'POST',
+   headers:{'Content-Type':'application/json','X-Kanje-Token':KJ_TOKEN},
+   body:JSON.stringify({on:!autoOn})});
+  await r.json();pollListener();
+ }catch(e){}
+}
+async function runGo(id,btn){
+ if(!listenerUp){copyStart(document.getElementById('startBtn'));
+  document.getElementById('startBtn').style.display='';return}
+ try{
+  btn.disabled=true;btn.textContent='접수 중…';
+  const r=await fetch(LISTENER+'/go',{method:'POST',
+   headers:{'Content-Type':'application/json','X-Kanje-Token':KJ_TOKEN},
+   body:JSON.stringify({id})});
+  const j=await r.json();
+  if(!j.ok){btn.textContent=j.busy?'다른 잡 실행 중':'거부';setTimeout(()=>{btn.textContent='▶ 실행';btn.disabled=false},2500)}
+  pollListener();
+ }catch(e){btn.disabled=false;btn.textContent='▶ 실행'}
+}
+async function toggleLog(id){
+ const el=document.getElementById('lp-'+id);
+ if(el.style.display==='block'){el.style.display='none';return}
+ try{const r=await fetch(LISTENER+'/log?id='+id);el.textContent=await r.text();
+  el.style.display='block';el.scrollTop=el.scrollHeight}
+ catch(e){el.textContent='(로그 없음)';el.style.display='block'}
+}
+function elapsed(){
+ if(!runStart)return'';
+ const s=Math.max(0,(Date.now()-runStart)/1000|0);
+ return `${String(s/60|0).padStart(2,'0')}:${String(s%60).padStart(2,'0')}`;
+}
+function heroSet(title,sub,mini){
+ document.getElementById('heroTitle').innerHTML=title;
+ document.getElementById('heroSub').textContent=sub||'';
+ document.getElementById('heroMini').textContent=mini||'';
+}
+async function pollListener(){
+ clearTimeout(plTimer);
+ const ldot=document.getElementById('ldot'),linfo=document.getElementById('linfo');
+ const ab=document.getElementById('autoBtn'),al=document.getElementById('autoLbl');
+ try{
+  const ctl=new AbortController();setTimeout(()=>ctl.abort(),1500);
+  const r=await fetch(LISTENER+'/state',{signal:ctl.signal});
+  const st=await r.json();
+  listenerUp=true;ldot.classList.add('up');linfo.textContent='온라인';
+  document.getElementById('startBtn').style.display='none';
+  autoOn=!!(st.auto&&st.auto.on);
+  ab.disabled=false;ab.classList.toggle('on',autoOn);
+  al.textContent=autoOn?`AUTO ON · ${st.auto.runs}/${st.auto.max}`:'AUTO 시작';
+  if(st.running){
+   runStart=new Date(st.running.started).getTime()||Date.now();
+   heroSet(`<em>${st.running.id}</em> 실행 중 <span class="mono" id="elap" style="font-size:15px;color:var(--sub)">${elapsed()}</span>`,
+     (DATA.queue.find(q=>q.id===st.running.id)||{}).t||'',
+     st.auto&&st.auto.on?st.auto.note:'수동 실행');
+   clearInterval(elapTimer);elapTimer=setInterval(()=>{const e=document.getElementById('elap');if(e)e.textContent=elapsed()},1000);
+  }else{
+   runStart=null;clearInterval(elapTimer);
+   const j0=(st.jobs||[])[0];
+   if(j0&&j0.kind==='auth'){
+    heroSet('<em>클로드 로그인 필요</em>','터미널에서 claude 실행 → 브라우저 로그인 → AUTO 다시 클릭',
+      st.auto?st.auto.note:'');
+   }else if(j0&&j0.kind==='nocli'){
+    heroSet('<em>claude CLI 미설치</em>','터미널에서 npm i -g @anthropic-ai/claude-code 후 AUTO 다시 클릭','');
+   }else{
+    const done=(st.jobs||[]).length;
+    heroSet(autoOn?'AUTO 대기 — 다음 사이클 준비':'대기',
+      autoOn?(st.auto.note||''):'AUTO를 켜면 남은 GO를 순차 자율 실행합니다',
+      done?`완료 잡 ${done} · 최근: ${j0.id} ${((j0||{}).result||{}).verdict||j0.status}`:'');
+   }
+  }
+  DATA.queue.forEach(q=>{
+   const bt=document.getElementById('bt-'+q.id),stl=document.getElementById('st-'+q.id),rs=document.getElementById('rs-'+q.id);
+   if(!bt)return;
+   const running=st.running&&st.running.id===q.id, busy=!!st.running;
+   const last=(st.jobs||[]).find(j=>j.id===q.id);
+   if(running){stl.textContent='RUNNING';stl.className='qst run';bt.textContent='실행 중';bt.disabled=true}
+   else{
+    bt.textContent='▶ 실행';bt.disabled=busy;
+    if(last){
+     const v=(last.result&&last.result.verdict)||null;
+     stl.textContent=last.status==='ok'?(v||'DONE'):last.status.toUpperCase();
+     stl.className='qst '+(last.status==='ok'&&['PASS','DONE'].includes(v)?'rdy':'');
+     rs.style.display='flex';
+     rs.innerHTML=`<span class="vd ${['PASS','DONE'].includes(v)?'P':v==='BLOCKED'?'B':'F'}">${v||last.status}</span>`+
+      `<span>${(last.result&&last.result.summary)||last.hint||''}</span>`+
+      (last.result&&last.result.seeds?`<span class="mono" style="font-size:10px;color:var(--mut)">seed ${last.result.seeds.join(', ')}</span>`:'')+
+      `<span class="lg" onclick="toggleLog('${q.id}')">로그</span>`;
+    }else{stl.textContent='READY';stl.className='qst rdy'}
+   }
+  });
+ }catch(e){
+  listenerUp=false;ldot.classList.remove('up');linfo.textContent='오프라인';
+  ab.disabled=true;ab.classList.remove('on');al.textContent='AUTO';
+  document.getElementById('startBtn').style.display='';
+  heroSet('리스너 꺼짐','오른쪽 버튼으로 시작 명령 복사 → 터미널에 붙여넣기 → 자동으로 전부 살아납니다','');
+  DATA.queue.forEach(q=>{const stl=document.getElementById('st-'+q.id);if(stl){stl.textContent='—';stl.className='qst'}});
+ }
+ plTimer=setTimeout(pollListener,5000);
+}
+async function pollComfy(){
+ const dot=document.getElementById('cdot'),info=document.getElementById('cinfo');
+ try{
+  const ctl=new AbortController();setTimeout(()=>ctl.abort(),1800);
+  const r=await fetch(cbase()+'/system_stats',{signal:ctl.signal});
+  const j=await r.json();
+  comfyUp=true;dot.classList.add('up');
+  const d=j.devices&&j.devices[0];
+  info.textContent=`온라인 · VRAM ${d?(d.vram_free/1073741824).toFixed(1):'?'}GB`;
+  loadOutputs();
+ }catch(e){comfyUp=false;dot.classList.remove('up');
+  info.textContent=listenerUp?'대기 — 실행 시 자동 기동':'리스너 경유 확인 불가'}
+ setTimeout(pollComfy,10000);
+}
+async function loadOutputs(){
+ try{
+  const b=cbase();
+  const r=await fetch(b+'/history?max_items=12');const j=await r.json();
+  const items=[];
+  const push=(im)=>{if(items.length>=8)return;
+   const u=`${b}/view?filename=${encodeURIComponent(im.filename)}&subfolder=${encodeURIComponent(im.subfolder||'')}&type=output`;
+   items.push({u,vid:/\.(mp4|webm|mov|avi)$/i.test(im.filename)})};
+  Object.values(j).reverse().forEach(h=>{Object.values(h.outputs||{}).forEach(n=>{
+   (n.images||[]).forEach(im=>{if(im.type==='output')push(im)});
+   (n.gifs||[]).forEach(im=>push(im));
+   (n.videos||[]).forEach(im=>push(im));
+  })});
+  const el=document.getElementById('outs');
+  el.className=items.length?'imgs':'off';
+  el.innerHTML=items.length?items.map(it=>it.vid
+   ?`<video controls playsinline preload="metadata" style="width:100%;aspect-ratio:1;object-fit:cover;border:1px solid var(--line);background:#111"><source src="${it.u}"></video>`
+   :`<img src="${it.u}" onclick="window.open('${it.u}')">`).join(''):'아직 결과물 없음';
+ }catch(e){}
+}
+pollListener();
+setTimeout(pollComfy,600);
+</script>
+</body>
+</html>
