@@ -214,8 +214,18 @@
 <script>
 const VAULT='Obsidian for Claude';
 const API='http://127.0.0.1:8188';
-const LISTENER='http://127.0.0.1:8787';
-const KJ_TOKEN='kj_7f3a9c2e51d84b60a1';
+let LISTENER='http://127.0.0.1:8787';
+const LJSON='https://raw.githubusercontent.com/hansy-daangn/autogen/claude/new-session-aqqyl5/listener.json';
+(function(){try{
+ const p=new URLSearchParams(location.search);
+ const t=p.get('token');if(t)localStorage.setItem('kj_token',t.trim());
+ const l=p.get('listener');if(l)localStorage.setItem('kj_listener',l.trim().replace(/\/+$/,''));
+ if(t||l)history.replaceState(null,'',location.pathname);
+}catch(e){}})();
+function kjToken(){
+ let t=localStorage.getItem('kj_token');
+ if(!t){t=prompt('리스너 토큰 입력 (이 기기에 1회 저장)');if(t){t=t.trim();localStorage.setItem('kj_token',t)}}
+ return t||''}
 const START_CMD='python "C:\\\\Users\\\\USER\\\\Desktop\\\\Workspace\\\\관제_202608\\\\go_listener.py"';
 const F3D='3D페르소나_스타일이식_202608/', FST='정답스타일_재현_202608/';
 const ob=p=>'obsidian://open?vault='+encodeURIComponent(VAULT)+'&file='+encodeURIComponent(p);
@@ -434,7 +444,7 @@ function copyStart(btn){
 async function toggleAuto(){
  try{
   const r=await fetch(LISTENER+'/auto',{method:'POST',
-   headers:{'Content-Type':'application/json','X-Kanje-Token':KJ_TOKEN},
+   headers:{'Content-Type':'application/json','X-Kanje-Token':kjToken()},
    body:JSON.stringify({on:!autoOn})});
   await r.json();pollListener();
  }catch(e){}
@@ -445,7 +455,7 @@ async function runGo(id,btn){
  try{
   btn.disabled=true;btn.textContent='접수 중…';
   const r=await fetch(LISTENER+'/go',{method:'POST',
-   headers:{'Content-Type':'application/json','X-Kanje-Token':KJ_TOKEN},
+   headers:{'Content-Type':'application/json','X-Kanje-Token':kjToken()},
    body:JSON.stringify({id})});
   const j=await r.json();
   if(!j.ok){btn.textContent=j.busy?'다른 잡 실행 중':'거부';setTimeout(()=>{btn.textContent='▶ 실행';btn.disabled=false},2500)}
@@ -469,6 +479,20 @@ function heroSet(title,sub,mini){
  document.getElementById('heroSub').textContent=sub||'';
  document.getElementById('heroMini').textContent=mini||'';
 }
+let lastResolve=0;
+async function probe(u){
+ try{const c=new AbortController();setTimeout(()=>c.abort(),2500);
+  const r=await fetch(u+'/state',{signal:c.signal});return r.ok}
+ catch(e){return false}}
+async function resolveListener(){
+ lastResolve=Date.now();
+ const cand=[];
+ const saved=localStorage.getItem('kj_listener');if(saved)cand.push(saved);
+ if(location.protocol!=='https:')cand.push('http://127.0.0.1:8787');
+ try{const r=await fetch(LJSON+'?t='+(Date.now()/30000|0));
+  if(r.ok){const j=await r.json();if(j&&j.url)cand.push(j.url.replace(/\/+$/,''))}}catch(e){}
+ for(const u of cand){if(u&&await probe(u)){LISTENER=u;return true}}
+ return false}
 async function pollListener(){
  clearTimeout(plTimer);
  const ldot=document.getElementById('ldot'),linfo=document.getElementById('linfo');
@@ -524,10 +548,14 @@ async function pollListener(){
    }
   });
  }catch(e){
+  if(Date.now()-lastResolve>15000&&await resolveListener()){plTimer=setTimeout(pollListener,200);return}
   listenerUp=false;ldot.classList.remove('up');linfo.textContent='오프라인';
   ab.disabled=true;ab.classList.remove('on');al.textContent='AUTO';
   document.getElementById('startBtn').style.display='';
-  heroSet('리스너 꺼짐','오른쪽 버튼으로 시작 명령 복사 → 터미널에 붙여넣기 → 자동으로 전부 살아납니다','');
+  if(location.protocol==='https:')
+   heroSet('리스너 꺼짐','PC에서 리스너를 켜면 터널 주소가 자동 등록됩니다 (GO-92)','수동 지정: 주소 뒤에 ?listener=터널URL');
+  else
+   heroSet('리스너 꺼짐','오른쪽 버튼으로 시작 명령 복사 → 터미널에 붙여넣기 → 자동으로 전부 살아납니다','');
   DATA.queue.forEach(q=>{const stl=document.getElementById('st-'+q.id);if(stl){stl.textContent='—';stl.className='qst'}});
  }
  plTimer=setTimeout(pollListener,5000);
@@ -566,8 +594,8 @@ async function loadOutputs(){
    :`<img src="${it.u}" onclick="window.open('${it.u}')">`).join(''):'아직 결과물 없음';
  }catch(e){}
 }
-pollListener();
-setTimeout(pollComfy,600);
+resolveListener().finally(()=>pollListener());
+setTimeout(pollComfy,1200);
 </script>
 </body>
 </html>
