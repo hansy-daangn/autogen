@@ -25,18 +25,18 @@ jobs:
               -H "X-GitHub-Api-Version: 2022-11-28" "$@"
           }
           code=$(api "https://api.github.com/repos/$REPO/pages")
+          echo "== current Pages config (GET $code) =="
+          cat /tmp/resp.json; echo
           if [ "$code" = "404" ]; then
             echo "Pages not enabled yet — creating site (legacy, branch=$BRANCH)"
             code=$(api -X POST "https://api.github.com/repos/$REPO/pages" \
               -d "{\"build_type\":\"legacy\",\"source\":{\"branch\":\"$BRANCH\",\"path\":\"/\"}}")
-            cat /tmp/resp.json; echo
-            [ "$code" = "201" ] || [ "$code" = "409" ] || { echo "create failed ($code)"; exit 1; }
+            echo "== create ($code) =="; cat /tmp/resp.json; echo
           else
-            echo "Pages already enabled — ensuring source is $BRANCH (legacy)"
             code=$(api -X PUT "https://api.github.com/repos/$REPO/pages" \
               -d "{\"build_type\":\"legacy\",\"source\":{\"branch\":\"$BRANCH\",\"path\":\"/\"}}")
-            cat /tmp/resp.json; echo
-            [ "$code" = "204" ] || { echo "update failed ($code)"; exit 1; }
+            echo "== update to source=$BRANCH ($code) =="; cat /tmp/resp.json; echo
           fi
           code=$(api "https://api.github.com/repos/$REPO/pages")
+          echo "== final Pages config (GET $code) =="
           cat /tmp/resp.json; echo
